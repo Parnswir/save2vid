@@ -1,155 +1,112 @@
-var Save = require("./Save");
-var Section = require("./Section");
+var fs = require('fs');
+var _ = require('lodash');
+
+var Save = require('./Save');
+var Section = require('./Section');
 
 module.exports = {
-    from_local_file: from_local_file,
-    from_string: from_string
+    fromFile: fromFile,
+    fromString: fromString
 };
 
-// Extract a local EU save file
-// Call handler with (err, save)
-function from_local_file(filepath, handler) {
-    var fs = require("fs");
-
+function fromFile(filepath, handler) {
     fs.readFile(filepath, function (err, data) {
-        if(err) {
+        if (err) {
             handler(err);
         } else {
-            handler(null, from_string(data.toString()));
+            handler(null, fromString(data.toString()));
         }
     });
 }
 
-// Extract an EU save string
-function from_string(data) {
-    var key = "[\\w\\.-]+"
-      , value = '(?:' + '"[^"]*"' + '|' + key + ')';
-    var regex = new RegExp("(?:"
-        +value
-        +"|"
-        +"\\{"
-        +"|"
-        +"}"
-        +"|"
-        +"="
-        +")"
-    , "g"), res_g = data.match(regex), length = res_g.length;
+function fromString(data) {
+    var regex = new RegExp("(?:(?:\"[^\"]*\"|[\\w\\.-]+)|\\{|}|=)", "g");
+    var res_g = data.match(regex);
 
-    var stack = [], last_section_name = "", current_section = new Section()
-      , debug=false, no_stack = false, depth_indent = "", save_type = "";
+    var stack = [],
+        last_section_name = "",
+        currentSection = new Section(),
+        noStack = false,
+        save_type = "";
 
-    function trim_value(s) {
-        // Trim and delete first/last " characters
+    function trimValue(s) {
         return s.trim().replace(/^"|"$/g, "");
     }
 
-    for(var i=0; i < length; i++) {
-        var res = trim_value(res_g[i]);
-
-        if(res == "{") {
-            //console.log("{ found");
-            var unnamed = false;
-
-            if(stack.length < 2) {
-                throw "{ found but stack.length = "+stack.length;
+    _.forEach(res_g, function (res, index) {
+        res = trimValue(res);
+        if (res == "{") {
+            if (stack.length < 2) {
+                throw "{ found but stack size = " + stack.length;
             }
 
-            var last_elt  = stack.pop();
-            if(last_elt == "=") {
-                var token = stack.pop();
-                if(token == '=' || token == '{' || token == '}') {
-                    throw token + " found after = { when expected "+last_key;
+            var last_elt = stack.pop();
+            if (last_elt == "=") {
+                let token = stack.pop();
+                if (token in ['=', '{', '}']) {
+                    throw token + " found after = {";
                 }
 
                 last_section_name = token;
-                current_section = new Section(last_section_name, current_section);
+                currentSection = new Section(last_section_name, currentSection);
             } else {
                 stack.push(last_elt);
-                if(last_section_name == "") {
-                    throw "Unnamed section found and no names available. Last token: "+last_elt;
+                if (last_section_name == "") {
+                    throw "Unnamed section found and no names available. Last token: " + last_elt;
                 }
-                unnamed = true;
-                //console.log("Unnamed section found, take last section name as name: "+last_section_name);
-
-                current_section = new Section(last_section_name, current_section);
+                currentSection = new Section(last_section_name, currentSection);
             }
+        }
+        else if (res == "}") {
+            noStack = true;
 
-            if(debug) console.log(depth_indent+'<section name="'+last_section_name+
-                '" unnamed="'+unnamed.toString()+'">');
-            depth_indent += "    ";
-        } else if(res == "}") {
-            //console.log("} found");
-            no_stack = true;
-
-            var token, values = [];
-            while((token = stack.pop()) != "{") {
+            let token, values = [];
+            while ((token = stack.pop()) != "{") {
                 values.unshift(token);
             }
-            // 'section_name' and '=' also removed in "{" part
 
-            if(!values.length) {
-                //console.log("End of section "+current_section.name);
-                // Add current section in parent's elements
-                current_section.parent.add_element(current_section.name, current_section);
+            if (!values.length) {
+                currentSection.parent.add_element(currentSection.name, currentSection);
             } else {
-                if(current_section.elements_order.length) {
-                    throw "Array found but elements also found: "+
-                        Object.keys(current_section.elements)+". Array: "+
-                        values.join(",");
+                if (currentSection.insertionOrder.length) {
+                    throw "Array found but elements also found: " +
+                    Object.keys(currentSection.elements) + ". Array: " +
+                    values.join(",");
                 }
-                if(debug) console.log(depth_indent+'<array value="\''+values.join("' '")+'\'" />')
-                values = values.filter(function(elt) {
-                    // Remove empty elements
+                values = values.filter(function (elt) {
                     return elt !== "";
-                })
+                });
 
-                // Current section is not a section but a list
-                current_section.parent.add_element(current_section.name, values);
-                // Clear list
-                values = [];
+                currentSection.parent.add_element(currentSection.name, values);
             }
-
-            depth_indent = depth_indent.slice(0, -4);
-            if(debug) console.log(depth_indent+'</section>');
-            current_section = current_section.parent;
-        } else if(res == "=") {
-            //console.log("= found");
-        } else {
-            //console.log("Value found: "+res);
-            if(i == 0) {
-                // Save type found
+            currentSection = currentSection.parent;
+        }
+        else if (res == "=") {
+        }
+        else {
+            if (index == 0) {
                 save_type = res;
-                if(debug) console.log("<"+save_type+">");
             }
 
-            var token = stack.pop();
-            if(token != "=") {
+            let token = stack.pop();
+            if (token != "=") {
                 stack.push(token);
-                // Store an element or a key
             } else {
-                // key = value found
                 token = stack.pop();
-                if(token == '=' || token == '{' || token == '}') {
+                if (token in ['=', '{', '}']) {
                     throw token + " found after = value when expected a key";
                 }
 
-                var key = token
-                  , value = res;
-
-                if(debug) console.log(depth_indent+'<item name="'+key+'" value="'+value+'" />');
-                current_section.add_element(key, value);
-                no_stack = true;
+                currentSection.add_element(token, res);
+                noStack = true;
             }
         }
 
-        if(!no_stack) {
+        if (!noStack) {
             stack.push(res);
         }
-        no_stack = false;
-    }
+        noStack = false;
+    });
 
-    if(save_type != "" && debug) {
-        console.log("</"+save_type+">");
-    }
-    return new Save(save_type, current_section);
+    return new Save(save_type, currentSection);
 }
