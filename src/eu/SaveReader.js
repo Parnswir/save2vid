@@ -24,10 +24,10 @@ function fromString(data) {
     var res_g = data.match(regex);
 
     var stack = [],
-        last_section_name = "",
+        lastSectionName = "",
         currentSection = new Section(),
         noStack = false,
-        save_type = "";
+        saveType = "";
 
     function trimValue(s) {
         return s.trim().replace(/^"|"$/g, "");
@@ -47,14 +47,14 @@ function fromString(data) {
                     throw token + " found after = {";
                 }
 
-                last_section_name = token;
-                currentSection = new Section(last_section_name, currentSection);
+                lastSectionName = token;
+                currentSection = new Section(lastSectionName, currentSection);
             } else {
                 stack.push(last_elt);
-                if (last_section_name == "") {
+                if (lastSectionName == "") {
                     throw "Unnamed section found and no names available. Last token: " + last_elt;
                 }
-                currentSection = new Section(last_section_name, currentSection);
+                currentSection = new Section(lastSectionName, currentSection);
             }
         }
         else if (res == "}") {
@@ -85,7 +85,7 @@ function fromString(data) {
         }
         else {
             if (index == 0) {
-                save_type = res;
+                saveType = res;
             }
 
             let token = stack.pop();
@@ -108,5 +108,5 @@ function fromString(data) {
         noStack = false;
     });
 
-    return new Save(save_type, currentSection);
+    return new Save(saveType, currentSection);
 }
