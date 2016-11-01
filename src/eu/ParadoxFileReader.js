@@ -1,7 +1,7 @@
 var fs = require('fs');
 var _ = require('lodash');
 
-var Save = require('./Save');
+var File = require('./File');
 var Section = require('./Section');
 
 module.exports = {
@@ -108,5 +108,5 @@ function fromString(data) {
         noStack = false;
     });
 
-    return new Save(saveType, currentSection);
+    return new File(saveType, currentSection);
 }

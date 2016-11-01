@@ -1,12 +1,29 @@
-var SaveReader = require("./eu/saveReader");
+'use strict';
+
+var _ = require('lodash');
+var config = require('config');
+
+var logger = require('./logger');
+var FileReader = require("./eu/ParadoxFileReader");
 
 if(process.argv.length > 2) {
-    SaveReader.fromFile(process.argv[2], function(err, save) {
+    logger.info('Using resources from base path ', config.EU4_PATH);
+
+
+
+    FileReader.fromFile(process.argv[2], function(err, file) {
         if(err) {
             console.log("Error: " + err);
         } else {
-            console.log(save);
-            //provinces: .root.elements.provinces.elements
+            console.log(file);
+
+            //Province file:
+            //console.log(save.root.elements['1436.4.28'].elements);
+
+            //Savegame provinces:
+            //_.forEach(save.root.elements.provinces.elements, function (province) {
+            //    console.log(province.name, province.elements.owner);
+            //});
         }
     });
 } else {

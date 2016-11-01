@@ -1,7 +1,7 @@
 var Section = require('./Section');
 
-var Save = function Save(saveType, root) {
-    this.saveType = saveType;
+var Save = function Save(fileType, root) {
+    this.fileType = fileType;
     this.root = root || new Section();
 };
 
