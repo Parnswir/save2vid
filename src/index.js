@@ -5,11 +5,18 @@ var config = require('config');
 
 var logger = require('./logger');
 var FileReader = require("./eu/ParadoxFileReader");
+var Definitions = require("./eu/Definitions");
 
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
 
-
+    Definitions.fromFile(config.EU4_PATH + '/map/definition.csv')
+        .then(function (data) {
+            logger.info('Definitions: ', data);
+        })
+        .catch(function (err) {
+            logger.error(err);
+        });
 
     FileReader.fromFile(process.argv[2], function(err, file) {
         if(err) {
