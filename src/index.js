@@ -11,16 +11,24 @@ var Map = require('./eu/Map');
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
 
+    var provinces = {};
+
     Promise.resolve()
         .then(function () {
             return Definitions.fromFile(config.EU4_PATH + '/map/definition.csv');
         })
         .then(function (definitions) {
-            logger.info('Definitions: ', definitions);
-            return new Map().getData(config.EU4_PATH + '/map/provinces.bmp');
+            _.forEach(definitions, function (definition) {
+                provinces[_.get(definition, 'province')] = definition;
+            });
+            logger.info('Loading and resizing map');
+            return new Map(1280).fromFile(config.EU4_PATH + '/map/provinces.bmp');
         })
-        .then(function (data) {
-            logger.info(data);
+        .then(function (map) {
+            return map.replace({red: 128, green: 34, blue: 64}, {red: 255, green: 255, blue: 255});
+        })
+        .then(function (map) {
+            return map.saveToFile('./test.bmp');
         })
         .then(function () {
             FileReader.fromFile(process.argv[2], function(err, file) {

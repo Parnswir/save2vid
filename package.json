@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "bmp-js": "^0.0.2",
     "config": "^1.21.0",
     "csv-parse": "^1.1.7",
+    "jimp": "^0.2.27",
     "lodash": "^4.16.5",
     "winston": "^2.2.0"
   }
