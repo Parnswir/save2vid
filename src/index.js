@@ -19,33 +19,41 @@ if(process.argv.length > 2) {
         })
         .then(function (definitions) {
             _.forEach(definitions, function (definition) {
-                provinces[_.get(definition, 'province')] = definition;
+                provinces[_.get(definition, 'province')] = definition.red + ',' + definition.green + ',' + definition.blue;
             });
             logger.info('Loading and resizing map');
             return new Map(1280).fromFile(config.EU4_PATH + '/map/provinces.bmp');
         })
         .then(function (map) {
-            return map.replace({red: 128, green: 34, blue: 64}, {red: 255, green: 255, blue: 255});
+            logger.info('Building province mapping');
+            return map.buildProvinceMapping(provinces);
         })
         .then(function (map) {
-            return map.saveToFile('./test.bmp');
-        })
-        .then(function () {
-            FileReader.fromFile(process.argv[2], function(err, file) {
-                if(err) {
-                    console.log("Error: " + err);
-                } else {
-                    console.log(file);
-
-                    //Province file:
-                    //console.log(save.root.elements['1436.4.28'].elements);
-
-                    //Savegame provinces:
-                    //_.forEach(save.root.elements.provinces.elements, function (province) {
-                    //    console.log(province.name, province.elements.owner);
-                    //});
-                }
-            });
+            logger.info('Parsing save file');
+            return FileReader.fromFile(process.argv[2])
+                .then(function (save) {
+                    logger.info('Building history');
+                    var historyMapping = {};
+                    var date = /\d+\.\d+\.\d+/gi;
+                    _.forEach(save.root.elements.provinces.elements, function (province) {
+                        let historySection = province.elements.history;
+                        if (historySection && historySection.elements) {
+                            let history = historySection.elements;
+                            _.forEach(historySection.insertionOrder, function (key) {
+                                if (key.match(date)) {
+                                    let events = history[key].elements;
+                                    let owner = _.get(events, 'owner');
+                                    if (owner) {
+                                        let values = _.get(historyMapping, key, []);
+                                        values.push({id: Math.abs(province.name), owner: owner});
+                                        historyMapping[key] = values;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    console.log(historyMapping);
+                });
         })
         .catch(function (err) {
             logger.error(err);
