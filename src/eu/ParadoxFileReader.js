@@ -9,14 +9,12 @@ module.exports = {
     fromString: fromString
 };
 
-function fromFile(filepath, handler) {
-    fs.readFile(filepath, function (err, data) {
-        if (err) {
-            handler(err);
-        } else {
-            handler(null, fromString(data.toString()));
-        }
-    });
+function fromFile(filepath) {
+    return Promise.resolve()
+        .then(function () {
+            let data = fs.readFileSync(filepath);
+            return fromString(data.toString());
+        });
 }
 
 function fromString(data) {
