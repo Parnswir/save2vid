@@ -5,6 +5,8 @@ var _ = require('lodash');
 
 var Map = function (width) {
     this.width = width;
+    this.colorMapping = {};
+    this.provinceMapping = {};
 };
 
 module.exports = Map;
@@ -12,9 +14,18 @@ module.exports = Map;
 Map.prototype.fromFile = function (path) {
     var self = this;
     return jimp.read(path)
-        .then(function(image) {
+        .then(function (image) {
             image.resize(self.width, jimp.AUTO, jimp.RESIZE_NEAREST_NEIGHBOR);
             self.image = image;
+        })
+        .then(function () {
+            self.colorMapping = {};
+            self.image.scan(0, 0, self.image.bitmap.width, self.image.bitmap.height, function (x, y, idx) {
+                let color = this.bitmap.data[idx + 0] + ',' + this.bitmap.data[idx + 1] + ',' + this.bitmap.data[idx + 2];
+                let value = _.get(self.colorMapping, color, []);
+                value.push(idx);
+                self.colorMapping[color] = value;
+            });
             return Promise.resolve(self);
         });
 };
@@ -27,23 +38,29 @@ Map.prototype.saveToFile = function (path) {
     }
 };
 
-Map.prototype.replace = function (originalColor, newColor) {
+Map.prototype.recolor = function (provinces, newColor) {
+    var self = this;
     if (this.image) {
-        this.image.scan(0, 0, this.image.bitmap.width, this.image.bitmap.height, function (x, y, idx) {
-            var currentColor = {
-                red:   this.bitmap.data[idx + 0],
-                green: this.bitmap.data[idx + 1],
-                blue:  this.bitmap.data[idx + 2]
-            };
-
-            if (_.isEqual(currentColor, _.pick(originalColor, ['red', 'green', 'blue']))) {
-                this.bitmap.data[idx + 0] = newColor.red;
-                this.bitmap.data[idx + 1] = newColor.green;
-                this.bitmap.data[idx + 2] = newColor.blue;
-            }
+        _.forEach(provinces, function (province) {
+            _.forEach(_.get(self.provinceMapping, province, []), function (idx) {
+                self.image.bitmap.data[idx + 0] = newColor.red;
+                self.image.bitmap.data[idx + 1] = newColor.green;
+                self.image.bitmap.data[idx + 2] = newColor.blue;
+            })
         });
         return Promise.resolve(this);
     } else {
         return Promise.reject('Map has to be loaded first');
     }
+};
+
+Map.prototype.buildProvinceMapping = function (mapping) {
+    var self = this;
+    return Promise.resolve()
+        .then(function () {
+            _.forEach(_.keys(mapping), function (key) {
+                self.provinceMapping[key] = self.colorMapping[mapping[key]];
+            });
+            return self;
+        });
 };
