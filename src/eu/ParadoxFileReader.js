@@ -1,6 +1,7 @@
 var fs = require('fs');
 var _ = require('lodash');
 
+var logger = require('./../logger');
 var File = require('./File');
 var Section = require('./Section');
 
@@ -12,7 +13,7 @@ module.exports = {
 function fromFile(filepath) {
     return Promise.resolve()
         .then(function () {
-            let data = fs.readFileSync(filepath);
+            let data = fs.readFileSync(filepath, {encoding: 'latin1'});
             return fromString(data.toString());
         });
 }
@@ -28,7 +29,7 @@ function fromString(data) {
         saveType = "";
 
     function trimValue(s) {
-        return s.trim().replace(/^"|"$/g, "");
+        return s.trim().replace(/^"|"$/g, '');
     }
 
     _.forEach(res_g, function (res, index) {
@@ -67,15 +68,14 @@ function fromString(data) {
                 currentSection.$parent.add_element(currentSection.$name, currentSection);
             } else {
                 if (currentSection.$insertionOrder.length) {
-                    throw "Array found but $elements also found: " +
-                    Object.keys(currentSection) + ". Array: " +
-                    values.join(",");
-                }
-                values = values.filter(function (elt) {
-                    return elt !== "";
-                });
+                    logger.warn("Ignoring nested array: " + values.join(","));
+                } else {
+                    values = values.filter(function (elt) {
+                        return elt !== "";
+                    });
 
-                currentSection.$parent.add_element(currentSection.$name, values);
+                    currentSection.$parent.add_element(currentSection.$name, values);
+                }
             }
             currentSection = currentSection.$parent;
         }

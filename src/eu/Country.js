@@ -25,3 +25,17 @@ CountryFactory.prototype.fromFile = function (tag, filePath) {
             return new Country(tag, path.basename(filePath, '.txt'), new Color(countryFile.root.color));
         });
 };
+
+CountryFactory.prototype.all = function (filePath) {
+    let self = this;
+    return FileReader.fromFile(filePath)
+        .then(function (mappingFile) {
+            let mapping = mappingFile.root.$insertionOrder;
+            let promises = mapping.map(function (key) {
+                console.log(key);
+                let relativePath = path.resolve(filePath, '../..', mappingFile.root[key]);
+                return self.fromFile(key, relativePath);
+            });
+            return Promise.all(promises);
+        });
+};
