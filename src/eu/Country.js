@@ -1,7 +1,6 @@
 'use strict';
 
 var path = require('path');
-var _ = require('lodash');
 
 var FileReader = require('./ParadoxFileReader');
 var Color = require('./Color');
@@ -32,7 +31,6 @@ CountryFactory.prototype.all = function (filePath) {
         .then(function (mappingFile) {
             let mapping = mappingFile.root.$insertionOrder;
             let promises = mapping.map(function (key) {
-                console.log(key);
                 let relativePath = path.resolve(filePath, '../..', mappingFile.root[key]);
                 return self.fromFile(key, relativePath);
             });

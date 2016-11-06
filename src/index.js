@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var config = require('config');
+var path = require('path');
 
 var logger = require('./logger');
 var FileReader = require("./eu/ParadoxFileReader");
@@ -9,30 +10,47 @@ var Definitions = require("./eu/Definitions");
 var Map = require('./eu/Map');
 var Color = require('./eu/Color');
 var HistoricalDate = require('./eu/HistoricalDate');
+var CountryFactory = require('./eu/Country').CountryFactory;
 
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
 
+    var countries = {};
     var provinces = {};
 
     Promise.resolve()
         .then(function () {
-            return Definitions.fromFile(config.EU4_PATH + '/map/definition.csv');
+            let tagPath = path.resolve(config.EU4_PATH, 'common/country_tags/00_countries.txt');
+            logger.info('Generating countries from ', tagPath);
+            return (new CountryFactory).all(tagPath);
+        })
+        .then(function (allCountries) {
+            logger.info('Found ' + allCountries.length + ' countries.');
+            _.forEach(allCountries, function (country) {
+                countries[country.tag] = country;
+            });
+        })
+        .then(function () {
+            let definitionPath = path.resolve(config.EU4_PATH, 'map/definition.csv');
+            logger.info('Reading definitions from ', definitionPath);
+            return Definitions.fromFile(definitionPath);
         })
         .then(function (definitions) {
             _.forEach(definitions, function (definition) {
                 provinces[_.get(definition, 'province')] = new Color(definition);
             });
-            logger.info('Loading and resizing map');
-            return new Map(1280).fromFile(config.EU4_PATH + '/map/provinces.bmp');
+            let mapPath = path.resolve(config.EU4_PATH, 'map/provinces.bmp');
+            logger.info('Loading and resizing map ', mapPath);
+            return new Map(1280).fromFile(mapPath);
         })
         .then(function (map) {
             logger.info('Building province mapping');
             return map.buildProvinceMapping(provinces);
         })
         .then(function (map) {
-            logger.info('Parsing save file');
-            return FileReader.fromFile(process.argv[2])
+            let saveFilePath = process.argv[2];
+            logger.info('Parsing save file ', saveFilePath);
+            return FileReader.fromFile(saveFilePath)
                 .then(function (save) {
                     logger.info('Building history');
                     var historyMapping = {};
@@ -53,9 +71,9 @@ if(process.argv.length > 2) {
                             });
                         }
                     });
-                    let allDates = _.keysIn(historyMapping);
-                    allDates = allDates.sort(HistoricalDate.compare);
-                    console.log(allDates);
+                    let timeline = _.keysIn(historyMapping);
+                    timeline = timeline.sort(HistoricalDate.compare);
+                    console.log(timeline);
                 });
         })
         .catch(function (err) {
