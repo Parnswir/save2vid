@@ -1,9 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-
 var Color = function (args) {
-    if (_.isArray(args) && args.length === 3) {
+    this.red = this.green = this.blue = 0;
+    if (args.length && args.length === 3) {
         init(this, args[0], args[1], args[2]);
     } else if (args.red && args.green && args.blue) {
         init(this, args.red, args.green, args.blue);
@@ -19,3 +18,7 @@ function init(color, red, green, blue) {
 }
 
 module.exports = Color;
+
+Color.prototype.toString = function () {
+    return this.red + ',' + this.green + ',' + this.blue;
+};

@@ -7,6 +7,7 @@ var logger = require('./logger');
 var FileReader = require("./eu/ParadoxFileReader");
 var Definitions = require("./eu/Definitions");
 var Map = require('./eu/Map');
+var Color = require('./eu/Color');
 
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
@@ -19,7 +20,7 @@ if(process.argv.length > 2) {
         })
         .then(function (definitions) {
             _.forEach(definitions, function (definition) {
-                provinces[_.get(definition, 'province')] = definition.red + ',' + definition.green + ',' + definition.blue;
+                provinces[_.get(definition, 'province')] = new Color(definition);
             });
             logger.info('Loading and resizing map');
             return new Map(1280).fromFile(config.EU4_PATH + '/map/provinces.bmp');

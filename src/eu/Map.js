@@ -3,6 +3,8 @@
 var jimp = require('jimp');
 var _ = require('lodash');
 
+var Color = require('./Color');
+
 var Map = function (width) {
     this.width = width;
     this.colorMapping = {};
@@ -21,10 +23,10 @@ Map.prototype.fromFile = function (path) {
         .then(function () {
             self.colorMapping = {};
             self.image.scan(0, 0, self.image.bitmap.width, self.image.bitmap.height, function (x, y, idx) {
-                let color = this.bitmap.data[idx + 0] + ',' + this.bitmap.data[idx + 1] + ',' + this.bitmap.data[idx + 2];
-                let value = _.get(self.colorMapping, color, []);
+                let color = new Color(this.bitmap.data.slice(idx, idx + 3));
+                let value = _.get(self.colorMapping, color.toString(), []);
                 value.push(idx);
-                self.colorMapping[color] = value;
+                self.colorMapping[color.toString()] = value;
             });
             return Promise.resolve(self);
         });
@@ -59,7 +61,7 @@ Map.prototype.buildProvinceMapping = function (mapping) {
     return Promise.resolve()
         .then(function () {
             _.forEach(_.keys(mapping), function (key) {
-                self.provinceMapping[key] = self.colorMapping[mapping[key]];
+                self.provinceMapping[key] = self.colorMapping[mapping[key].toString()];
             });
             return self;
         });
