@@ -32,14 +32,20 @@ if(process.argv.length > 2) {
             _.forEach(allCountries, function (country) {
                 countries[country.tag] = country;
             });
+
+            logger.info('Processing color overrides');
+            countries[ProvinceFactory.PLACEHOLDER_SEA] = new Country(undefined, 'Water', config.SEA_COLOR);
+            countries[ProvinceFactory.PLACEHOLDER_WASTELAND] = new Country(undefined, 'Wasteland', config.WASTELAND_COLOR);
+            let overrides = _.get(config, 'colorOverrides', {});
+            _.forEach(_.keysIn(overrides), function (tag) {
+                countries[tag] = new Country(tag, 'user-defined', overrides[tag]);
+            });
+            logger.info('Using ' + _.keysIn(overrides).length + ' overrides.');
         })
         .then(function () {
             let provincePath = path.resolve(config.EU4_PATH, 'history/provinces');
             logger.info('Reading provinces from ', provincePath);
-            let provinceFactory = new ProvinceFactory();
-            countries[provinceFactory.PLACEHOLDER_SEA] = new Country(undefined, 'Water', config.SEA_COLOR);
-            countries[provinceFactory.PLACEHOLDER_WASTELAND] = new Country(undefined, 'Wasteland', config.WASTELAND_COLOR);
-            return provinceFactory.all(provincePath);
+            return new ProvinceFactory().all(provincePath);
         })
         .then(function (allProvinces) {
             logger.info('Found ' + allProvinces.length + ' provinces.');

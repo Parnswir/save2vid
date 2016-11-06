@@ -17,8 +17,8 @@ module.exports = {
     ProvinceFactory: ProvinceFactory
 };
 
-ProvinceFactory.prototype.PLACEHOLDER_SEA = '$SEA$';
-ProvinceFactory.prototype.PLACEHOLDER_WASTELAND = '$WASTELAND$';
+ProvinceFactory.PLACEHOLDER_SEA = '$SEA$';
+ProvinceFactory.PLACEHOLDER_WASTELAND = '$WASTELAND$';
 
 var ID_REGEXP = new RegExp('(\\d+)', 'g');
 
@@ -31,7 +31,7 @@ ProvinceFactory.prototype.fromFile = function (filePath) {
             if (!owner && provinceFile.root['trade_goods']) {
                 owner = 'NAT';
             }
-            return new Province(id, owner || self.PLACEHOLDER_SEA);
+            return new Province(id, owner || ProvinceFactory.PLACEHOLDER_SEA);
         });
 };
 
@@ -56,7 +56,7 @@ ProvinceFactory.prototype.allWastelands = function (filePath) {
         })
         .then(function (provinces) {
             return provinces.map(function (province) {
-                return new Province(parseInt(province), self.PLACEHOLDER_WASTELAND);
+                return new Province(parseInt(province), ProvinceFactory.PLACEHOLDER_WASTELAND);
             })
         });
 };
