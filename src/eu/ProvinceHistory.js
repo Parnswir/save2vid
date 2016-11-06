@@ -17,14 +17,21 @@ module.exports = {
     ProvinceFactory: ProvinceFactory
 };
 
+ProvinceFactory.prototype.PLACEHOLDER_SEA = '$SEA$';
+ProvinceFactory.prototype.PLACEHOLDER_WASTELAND = '$WASTELAND$';
+
 var ID_REGEXP = new RegExp('(\\d+)', 'g');
 
 ProvinceFactory.prototype.fromFile = function (filePath) {
+    let self = this;
     let id = path.basename(filePath).match(ID_REGEXP)[0];
     return FileReader.fromFile(filePath)
         .then(function (provinceFile) {
             let owner = provinceFile.root.owner;
-            return new Province(id, owner || 'NAT');
+            if (!owner && provinceFile.root['trade_goods']) {
+                owner = 'NAT';
+            }
+            return new Province(id, owner || self.PLACEHOLDER_SEA);
         });
 };
 
@@ -38,5 +45,18 @@ ProvinceFactory.prototype.all = function (directory) {
                 return self.fromFile(filePath);
             });
             return Promise.all(promises);
+        });
+};
+
+ProvinceFactory.prototype.allWastelands = function (filePath) {
+    let self = this;
+    return FileReader.fromFile(filePath)
+        .then(function (climateFile) {
+            return climateFile.root['impassable'];
+        })
+        .then(function (provinces) {
+            return provinces.map(function (province) {
+                return new Province(parseInt(province), self.PLACEHOLDER_WASTELAND);
+            })
         });
 };

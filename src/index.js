@@ -10,6 +10,7 @@ var Definitions = require("./eu/Definitions");
 var Map = require('./eu/Map');
 var Color = require('./eu/Color');
 var HistoricalDate = require('./eu/HistoricalDate');
+var Country = require('./eu/Country').Country;
 var CountryFactory = require('./eu/Country').CountryFactory;
 var ProvinceFactory = require('./eu/ProvinceHistory').ProvinceFactory;
 
@@ -35,11 +36,23 @@ if(process.argv.length > 2) {
         .then(function () {
             let provincePath = path.resolve(config.EU4_PATH, 'history/provinces');
             logger.info('Reading provinces from ', provincePath);
-            return (new ProvinceFactory()).all(provincePath);
+            let provinceFactory = new ProvinceFactory();
+            countries[provinceFactory.PLACEHOLDER_SEA] = new Country(undefined, 'Water', config.SEA_COLOR);
+            countries[provinceFactory.PLACEHOLDER_WASTELAND] = new Country(undefined, 'Wasteland', config.WASTELAND_COLOR);
+            return provinceFactory.all(provincePath);
         })
         .then(function (allProvinces) {
             logger.info('Found ' + allProvinces.length + ' provinces.');
             provinces = allProvinces;
+        })
+        .then(function () {
+            let climatePath = path.resolve(config.EU4_PATH, 'map/climate.txt');
+            logger.info('Loading wastelands from', climatePath);
+            return (new ProvinceFactory()).allWastelands(climatePath);
+        })
+        .then(function (wastelandProvinces) {
+            logger.info('Found ' + wastelandProvinces.length + ' wastelands.');
+            provinces = provinces.concat(wastelandProvinces);
         })
         .then(function () {
             let definitionPath = path.resolve(config.EU4_PATH, 'map/definition.csv');
@@ -57,6 +70,14 @@ if(process.argv.length > 2) {
         .then(function (map) {
             logger.info('Building province mapping');
             return map.buildProvinceMapping(provinceColors);
+        })
+        .then(function (map) {
+            logger.info('Generating initial map');
+            let promises = [];
+            _.forEach(provinces, function (province) {
+                promises.push(map.recolor([province.id], countries[province.owner].color));
+            });
+            return Promise.all(promises).then(function() {return map.saveToFile('initial.bmp')});
         })
         .then(function (map) {
             let saveFilePath = process.argv[2];
