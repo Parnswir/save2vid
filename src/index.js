@@ -8,6 +8,7 @@ var FileReader = require("./eu/ParadoxFileReader");
 var Definitions = require("./eu/Definitions");
 var Map = require('./eu/Map');
 var Color = require('./eu/Color');
+var HistoricalDate = require('./eu/HistoricalDate');
 
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
@@ -35,13 +36,12 @@ if(process.argv.length > 2) {
                 .then(function (save) {
                     logger.info('Building history');
                     var historyMapping = {};
-                    var date = /\d+\.\d+\.\d+/gi;
                     _.forEach(save.root.provinces, function (province) {
                         let historySection = province.history;
                         if (historySection && historySection) {
                             let history = historySection;
                             _.forEach(historySection.$insertionOrder, function (key) {
-                                if (key.match(date)) {
+                                if (HistoricalDate.isValid(key)) {
                                     let events = history[key];
                                     let owner = _.get(events, 'owner');
                                     if (owner) {
@@ -53,7 +53,9 @@ if(process.argv.length > 2) {
                             });
                         }
                     });
-                    console.log(historyMapping);
+                    let allDates = _.keysIn(historyMapping);
+                    allDates = allDates.sort(HistoricalDate.compare);
+                    console.log(allDates);
                 });
         })
         .catch(function (err) {
