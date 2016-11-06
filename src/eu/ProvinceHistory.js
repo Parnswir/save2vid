@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path');
+var fs = require('fs');
 
 var FileReader = require('./ParadoxFileReader');
 
