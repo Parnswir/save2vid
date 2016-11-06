@@ -64,20 +64,20 @@ function fromString(data) {
             }
 
             if (!values.length) {
-                currentSection.parent.add_element(currentSection.name, currentSection);
+                currentSection.$parent.add_element(currentSection.$name, currentSection);
             } else {
-                if (currentSection.insertionOrder.length) {
-                    throw "Array found but elements also found: " +
-                    Object.keys(currentSection.elements) + ". Array: " +
+                if (currentSection.$insertionOrder.length) {
+                    throw "Array found but $elements also found: " +
+                    Object.keys(currentSection) + ". Array: " +
                     values.join(",");
                 }
                 values = values.filter(function (elt) {
                     return elt !== "";
                 });
 
-                currentSection.parent.add_element(currentSection.name, values);
+                currentSection.$parent.add_element(currentSection.$name, values);
             }
-            currentSection = currentSection.parent;
+            currentSection = currentSection.$parent;
         }
         else if (res == "=") {
         }

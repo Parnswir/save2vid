@@ -35,17 +35,17 @@ if(process.argv.length > 2) {
                     logger.info('Building history');
                     var historyMapping = {};
                     var date = /\d+\.\d+\.\d+/gi;
-                    _.forEach(save.root.elements.provinces.elements, function (province) {
-                        let historySection = province.elements.history;
-                        if (historySection && historySection.elements) {
-                            let history = historySection.elements;
-                            _.forEach(historySection.insertionOrder, function (key) {
+                    _.forEach(save.root.provinces, function (province) {
+                        let historySection = province.history;
+                        if (historySection && historySection) {
+                            let history = historySection;
+                            _.forEach(historySection.$insertionOrder, function (key) {
                                 if (key.match(date)) {
-                                    let events = history[key].elements;
+                                    let events = history[key];
                                     let owner = _.get(events, 'owner');
                                     if (owner) {
                                         let values = _.get(historyMapping, key, []);
-                                        values.push({id: Math.abs(province.name), owner: owner});
+                                        values.push({id: Math.abs(province.$name), owner: owner});
                                         historyMapping[key] = values;
                                     }
                                 }
