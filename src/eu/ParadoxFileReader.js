@@ -19,7 +19,7 @@ function fromFile(filepath) {
 }
 
 function fromString(data) {
-    var regex = new RegExp("(?:(?:\"[^\"]*\"|[\\w\\.-]+)|\\{|}|=)", "g");
+    var regex = new RegExp("(?:(?:\"[^\"]*\"|#.+|[\\w\\.-]+)|\\{|}|=)", "g");
     var res_g = data.match(regex);
 
     var stack = [],
@@ -34,6 +34,7 @@ function fromString(data) {
 
     _.forEach(res_g, function (res, index) {
         res = trimValue(res);
+        if (res.startsWith('#')) return;
         if (res == "{") {
             if (stack.length < 2) {
                 throw "{ found but stack size = " + stack.length;
