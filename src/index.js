@@ -11,12 +11,14 @@ var Map = require('./eu/Map');
 var Color = require('./eu/Color');
 var HistoricalDate = require('./eu/HistoricalDate');
 var CountryFactory = require('./eu/Country').CountryFactory;
+var ProvinceFactory = require('./eu/ProvinceHistory').ProvinceFactory;
 
 if(process.argv.length > 2) {
     logger.info('Using resources from base path ', config.EU4_PATH);
 
     var countries = {};
-    var provinces = {};
+    var provinces = [];
+    var provinceColors = {};
 
     Promise.resolve()
         .then(function () {
@@ -31,13 +33,22 @@ if(process.argv.length > 2) {
             });
         })
         .then(function () {
+            let provincePath = path.resolve(config.EU4_PATH, 'history/provinces');
+            logger.info('Reading provinces from ', provincePath);
+            return (new ProvinceFactory()).all(provincePath);
+        })
+        .then(function (allProvinces) {
+            logger.info('Found ' + allProvinces.length + ' provinces.');
+            provinces = allProvinces;
+        })
+        .then(function () {
             let definitionPath = path.resolve(config.EU4_PATH, 'map/definition.csv');
             logger.info('Reading definitions from ', definitionPath);
             return Definitions.fromFile(definitionPath);
         })
         .then(function (definitions) {
             _.forEach(definitions, function (definition) {
-                provinces[_.get(definition, 'province')] = new Color(definition);
+                provinceColors[_.get(definition, 'province')] = new Color(definition);
             });
             let mapPath = path.resolve(config.EU4_PATH, 'map/provinces.bmp');
             logger.info('Loading and resizing map ', mapPath);
@@ -45,7 +56,7 @@ if(process.argv.length > 2) {
         })
         .then(function (map) {
             logger.info('Building province mapping');
-            return map.buildProvinceMapping(provinces);
+            return map.buildProvinceMapping(provinceColors);
         })
         .then(function (map) {
             let saveFilePath = process.argv[2];
