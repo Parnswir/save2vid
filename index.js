@@ -111,7 +111,7 @@ if(process.argv.length > 2) {
                     });
                     let timeline = _.keysIn(historyMapping);
                     timeline = timeline.sort(HistoricalDate.compare);
-                    console.log(timeline);
+                    return timeline;
                 });
         })
         .catch(function (err) {
