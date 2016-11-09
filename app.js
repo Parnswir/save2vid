@@ -83,7 +83,7 @@ if(process.argv.length > 2) {
             _.forEach(provinces, function (province) {
                 promises.push(map.recolor([province.id], countries[province.owner].color));
             });
-            return Promise.all(promises).then(function() {return map.saveToFile('initial.bmp')});
+            return Promise.all(promises).then(function() {return map.saveToFile('out/initial.bmp')});
         })
         .then(function (map) {
             let saveFilePath = process.argv[2];
