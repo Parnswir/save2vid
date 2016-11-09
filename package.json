@@ -2,8 +2,10 @@
   "dependencies": {
     "config": "^1.21.0",
     "csv-parse": "^1.1.7",
+    "gifencoder": "^1.0.6",
     "jimp": "^0.2.27",
     "lodash": "^4.16.5",
+    "png-file-stream": "^1.0.0",
     "winston": "^2.2.0"
   }
 }

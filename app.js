@@ -3,6 +3,9 @@
 var _ = require('lodash');
 var config = require('config');
 var path = require('path');
+var fs = require('fs');
+var GIFEncoder = require('gifencoder');
+var pngFileStream = require('png-file-stream');
 
 var logger = require('./logger');
 var FileReader = require("./eu/ParadoxFileReader");
@@ -78,14 +81,6 @@ if(process.argv.length > 2) {
             return map.buildProvinceMapping(provinceColors);
         })
         .then(function (map) {
-            logger.info('Generating initial map');
-            let promises = [];
-            _.forEach(provinces, function (province) {
-                promises.push(map.recolor([province.id], countries[province.owner].color));
-            });
-            return Promise.all(promises).then(function() {return map.saveToFile('out/initial.bmp')});
-        })
-        .then(function (map) {
             let saveFilePath = process.argv[2];
             logger.info('Parsing save file ', saveFilePath);
             return FileReader.fromFile(saveFilePath)
@@ -111,7 +106,33 @@ if(process.argv.length > 2) {
                     });
                     let timeline = _.keysIn(historyMapping);
                     timeline = timeline.sort(HistoricalDate.compare);
-                    return timeline;
+
+                    logger.info('Generating initial map');
+                    _.forEach(provinces, function (province) {
+                        map.recolor([province.id], countries[province.owner].color);
+                    });
+                    map.saveToFile('out/initial.png');
+
+                    logger.info('Generating frames');
+                    _.forEach(timeline, function (date, index) {
+                        let events = historyMapping[date];
+                        _.forEach(events, function (event) {
+                            map.recolor([event.id], countries[event.owner].color);
+                        });
+                        map.saveToFile('out/frames/frame' + index + '.png');
+                    });
+
+                    logger.info('Writing GIF');
+                    let encoder = new GIFEncoder(map.image.width, map.image.height);
+                    return pngFileStream('out/frames/frame*.png')
+                        .pipe(encoder.createWriteStream({ repeat: -1, delay: 500, quality: 10 }))
+                        .pipe(fs.createWriteStream('out/animated.gif'));
+                })
+                .then(function (stream) {
+                    stream.on('close', function () {
+                        logger.info('Done.');
+                    });
+                    stream.on('error', function (err) {throw err});
                 });
         })
         .catch(function (err) {

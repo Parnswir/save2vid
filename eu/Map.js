@@ -34,9 +34,9 @@ Map.prototype.fromFile = function (path) {
 
 Map.prototype.saveToFile = function (path) {
     if (this.image) {
-        return this.image.write(path);
+        this.image.write(path);
     } else {
-        return Promise.reject('Map has to be loaded first');
+        throw new Error('Map has to be loaded first');
     }
 };
 
@@ -50,9 +50,8 @@ Map.prototype.recolor = function (provinces, newColor) {
                 self.image.bitmap.data[idx + 2] = newColor.blue;
             })
         });
-        return Promise.resolve(this);
     } else {
-        return Promise.reject('Map has to be loaded first');
+        throw new Error('Map has to be loaded first');
     }
 };
 
