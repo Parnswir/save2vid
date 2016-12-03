@@ -25,7 +25,7 @@ if(process.argv.length > 2) {
 
     Promise.resolve()
         .then(function () {
-            let tagPath = path.resolve(config.EU4_PATH, 'common/country_tags/00_countries.txt');
+            let tagPath = path.resolve(config.EU4_PATH, config.map.countries);
             logger.info('Generating countries from ', tagPath);
             return (new CountryFactory).all(tagPath);
         })
@@ -36,16 +36,16 @@ if(process.argv.length > 2) {
             });
 
             logger.info('Processing color overrides');
-            countries[ProvinceFactory.PLACEHOLDER_SEA] = new Country(undefined, 'Water', config.SEA_COLOR);
-            countries[ProvinceFactory.PLACEHOLDER_WASTELAND] = new Country(undefined, 'Wasteland', config.WASTELAND_COLOR);
-            let overrides = _.get(config, 'colorOverrides', {});
+            countries[ProvinceFactory.PLACEHOLDER_SEA] = new Country(undefined, 'Water', config.map.colors.sea);
+            countries[ProvinceFactory.PLACEHOLDER_WASTELAND] = new Country(undefined, 'Wasteland', config.map.colors.wasteland);
+            let overrides = _.get(config, 'map.colors.overrides', {});
             _.forEach(_.keysIn(overrides), function (tag) {
                 countries[tag] = new Country(tag, 'user-defined', overrides[tag]);
             });
             logger.info('Using ' + _.keysIn(overrides).length + ' overrides.');
         })
         .then(function () {
-            let provincePath = path.resolve(config.EU4_PATH, 'history/provinces');
+            let provincePath = path.resolve(config.EU4_PATH, config.map.history);
             logger.info('Reading provinces from ', provincePath);
             return new ProvinceFactory().all(provincePath);
         })
@@ -54,7 +54,7 @@ if(process.argv.length > 2) {
             provinces = allProvinces;
         })
         .then(function () {
-            let climatePath = path.resolve(config.EU4_PATH, 'map/climate.txt');
+            let climatePath = path.resolve(config.EU4_PATH, config.map.climate);
             logger.info('Loading wastelands from', climatePath);
             return (new ProvinceFactory()).allWastelands(climatePath);
         })
@@ -63,7 +63,7 @@ if(process.argv.length > 2) {
             provinces = provinces.concat(wastelandProvinces);
         })
         .then(function () {
-            let definitionPath = path.resolve(config.EU4_PATH, 'map/definition.csv');
+            let definitionPath = path.resolve(config.EU4_PATH, config.map.definition);
             logger.info('Reading definitions from ', definitionPath);
             return Definitions.fromFile(definitionPath);
         })
@@ -71,9 +71,9 @@ if(process.argv.length > 2) {
             _.forEach(definitions, function (definition) {
                 provinceColors[_.get(definition, 'province')] = new Color(definition);
             });
-            let mapPath = path.resolve(config.EU4_PATH, 'map/provinces.bmp');
+            let mapPath = path.resolve(config.EU4_PATH, config.map.provinces);
             logger.info('Loading and resizing map ', mapPath);
-            return new Map(1280).fromFile(mapPath);
+            return new Map(config.map.width).fromFile(mapPath);
         })
         .then(function (map) {
             logger.info('Building province mapping');
@@ -126,19 +126,10 @@ if(process.argv.length > 2) {
                         frames.push(framePath);
                     });
 
-                    var videoOptions = {
-                        fps: 15,
-                        loop: 1,
-                        transition: false,
-                        videoBitrate: 1024,
-                        videoCodec: 'mpeg4',
-                        size: map.width + 'x?',
-                        format: 'mp4'
-                    };
-
                     logger.info('Creating video');
+                    var videoOptions = config.video.options(map.width);
                     videoshow(frames, videoOptions)
-                        .save('out/video.mp4')
+                        .save(config.video.outputPath)
                         .on('start', function (command) {
                             logger.info('ffmpeg process started:', command);
                         })
