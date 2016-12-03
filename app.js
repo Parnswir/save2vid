@@ -126,7 +126,7 @@ if(process.argv.length > 2) {
                         frames.push(framePath);
                     });
 
-                    logger.info('Creating video');
+                    logger.info('Creating video. This might take a while.');
                     var videoOptions = config.video.options(map.width);
                     videoshow(frames, videoOptions)
                         .save(config.video.outputPath)
