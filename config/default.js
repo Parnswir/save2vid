@@ -22,13 +22,16 @@ module.exports = {
     },
 
     video: {
-        outputPath: 'out/video.mp4',
+        framesPerPart: 250,
+        outputPath: function (index) {
+            return 'out/video' + index;
+        },
         options: function (mapWidth) {
             return {
                 fps: 15,
                 loop: 1,
                 transition: false,
-                videoBitrate: 1024,
+                videoBitrate: 128,
                 videoCodec: 'mpeg4',
                 size: mapWidth + 'x?',
                 format: 'mp4'
