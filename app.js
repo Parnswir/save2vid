@@ -127,27 +127,40 @@ if(process.argv.length > 2) {
                     });
 
                     logger.info('Creating video. This might take a while.');
-
+                    let promises = [];
                     let fpp = config.video.framesPerPart;
                     let parts = Math.ceil(frames.length / fpp);
-                    for (var index = 0; index < parts; index++) {
-                        logger.info('Creating part ' + (index + 1) + '/' + parts);
-                        let images = frames.slice(index * fpp, (index + 1) * fpp);
-                        var videoOptions = config.video.options(map.width);
-                        videoshow(images, videoOptions)
-                            .save(config.video.outputPath(index) + '.' + videoOptions.format)
-                            .on('start', function (command) {
-                                logger.info('ffmpeg process started:', command);
-                            })
-                            .on('error', function (err, stdout, stderr) {
-                                logger.error('Error:', err);
-                                logger.error('ffmpeg stderr:', stderr);
-                            })
-                            .on('end', function (output) {
-                                logger.info('Video created in:', output);
-                            });
+                    for (var index = 1; index <= parts; index++) {
+                        promises.push(function (index) {
+                            return function (resolve, reject) {
+                                logger.info('Creating part ' + index + '/' + parts);
+                                var images = frames.slice((index - 1) * fpp, index * fpp);
+                                var videoOptions = config.video.options(map.width);
+                                videoshow(images, videoOptions)
+                                    .save(config.video.outputPath(index) + '.' + videoOptions.format)
+                                    .on('start', function (command) {
+                                        logger.info('ffmpeg process started:', command);
+                                    })
+                                    .on('error', function (err, stdout, stderr) {
+                                        logger.error('ffmpeg stderr:', stderr);
+                                        reject(err);
+                                    })
+                                    .on('end', function (output) {
+                                        logger.info('Video created in:', output);
+                                        resolve();
+                                    });
+                            };
+                        }(index));
                     }
+                    var promise = Promise.resolve();
+                    promises.forEach(function (p) {
+                        promise = promise.then(function() {return new Promise(p)});
+                    });
+                    return promise;
                 });
+        })
+        .then(function () {
+            logger.info('All done. Bye!')
         })
         .catch(function (err) {
             logger.error(err);
