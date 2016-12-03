@@ -4,8 +4,7 @@ var _ = require('lodash');
 var config = require('config');
 var path = require('path');
 var fs = require('fs');
-var GIFEncoder = require('gifencoder');
-var pngFileStream = require('png-file-stream');
+var videoshow = require('videoshow');
 
 var logger = require('./logger');
 var FileReader = require("./eu/ParadoxFileReader");
@@ -106,12 +105,15 @@ if(process.argv.length > 2) {
                     });
                     let timeline = _.keysIn(historyMapping);
                     timeline = timeline.sort(HistoricalDate.compare);
+                    let frames = [];
 
                     logger.info('Generating initial map');
                     _.forEach(provinces, function (province) {
                         map.recolor([province.id], countries[province.owner].color);
                     });
-                    map.saveToFile('out/initial.png');
+                    let outPath = 'out/initial.png';
+                    map.saveToFile(outPath);
+                    frames.push(outPath);
 
                     logger.info('Generating frames');
                     _.forEach(timeline, function (date, index) {
@@ -119,25 +121,40 @@ if(process.argv.length > 2) {
                         _.forEach(events, function (event) {
                             map.recolor([event.id], countries[event.owner].color);
                         });
-                        map.saveToFile('out/frames/frame' + index + '.png');
+                        let framePath = 'out/frames/frame' + index + '.png';
+                        map.saveToFile(framePath);
+                        frames.push(framePath);
                     });
 
-                    logger.info('Writing GIF');
-                    let encoder = new GIFEncoder(map.image.width, map.image.height);
-                    return pngFileStream('out/frames/frame*.png')
-                        .pipe(encoder.createWriteStream({ repeat: -1, delay: 500, quality: 10 }))
-                        .pipe(fs.createWriteStream('out/animated.gif'));
-                })
-                .then(function (stream) {
-                    stream.on('close', function () {
-                        logger.info('Done.');
-                    });
-                    stream.on('error', function (err) {throw err});
+                    var videoOptions = {
+                        fps: 15,
+                        loop: 1,
+                        transition: false,
+                        videoBitrate: 1024,
+                        videoCodec: 'mpeg4',
+                        size: map.width + 'x?',
+                        format: 'mp4'
+                    };
+
+                    logger.info('Creating video');
+                    videoshow(frames, videoOptions)
+                        .save('out/video.mp4')
+                        .on('start', function (command) {
+                            logger.info('ffmpeg process started:', command);
+                        })
+                        .on('error', function (err, stdout, stderr) {
+                            logger.error('Error:', err);
+                            logger.error('ffmpeg stderr:', stderr);
+                        })
+                        .on('end', function (output) {
+                            logger.info('Video created in:', output);
+                        });
+
                 });
         })
         .catch(function (err) {
             logger.error(err);
         });
 } else {
-    console.log("Provide (unzipped) .eu4 file as first parameter");
+    logger.error("Provide (unzipped) .eu4 file as first parameter");
 }
