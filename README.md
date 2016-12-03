@@ -4,6 +4,7 @@ A **savegame visualizer** for Paradox Interactive's [Europa Universalis IV](http
 ## Setup
 * Install [ffmpeg](https://ffmpeg.org/download.html).
 * Install a recent [Node.js](https://nodejs.org/).
+* Clone / Download this repository.
 * `npm install`
 
 ## Usage
