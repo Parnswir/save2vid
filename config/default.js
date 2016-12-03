@@ -4,7 +4,7 @@ module.exports = {
     EU4_PATH: 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Europa Universalis IV',
 
     map: {
-        width: 1280,
+        width: 640,
 
         climate: 'map/climate.txt',
         countries: 'common/country_tags/00_countries.txt',
@@ -31,7 +31,7 @@ module.exports = {
                 fps: 15,
                 loop: 1,
                 transition: false,
-                videoBitrate: 128,
+                videoBitrate: 512,
                 videoCodec: 'mpeg4',
                 size: mapWidth + 'x?',
                 format: 'mp4'
