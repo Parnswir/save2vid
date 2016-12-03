@@ -152,11 +152,17 @@ if(process.argv.length > 2) {
                             };
                         }(index));
                     }
-                    var promise = Promise.resolve();
-                    promises.forEach(function (p) {
-                        promise = promise.then(function() {return new Promise(p)});
-                    });
-                    return promise;
+                    if (config.video.parallelize) {
+                        return Promise.all(promises.map(function (p) {
+                            return new Promise(p);
+                        }));
+                    } else {
+                        var promise = Promise.resolve();
+                        promises.forEach(function (p) {
+                            promise = promise.then(function() {return new Promise(p)});
+                        });
+                        return promise;
+                    }
                 });
         })
         .then(function () {

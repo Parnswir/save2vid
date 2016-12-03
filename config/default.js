@@ -23,6 +23,7 @@ module.exports = {
 
     video: {
         framesPerPart: 250,
+        parallelize: false,
         outputPath: function (index) {
             return 'out/video' + index;
         },
