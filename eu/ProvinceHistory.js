@@ -23,7 +23,6 @@ ProvinceFactory.PLACEHOLDER_WASTELAND = '$WASTELAND$';
 var ID_REGEXP = new RegExp('(\\d+)', 'g');
 
 ProvinceFactory.prototype.fromFile = function (filePath) {
-    let self = this;
     let id = path.basename(filePath).match(ID_REGEXP)[0];
     return FileReader.fromFile(filePath)
         .then(function (provinceFile) {

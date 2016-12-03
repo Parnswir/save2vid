@@ -37,14 +37,14 @@ function fromString(data) {
         if (res.startsWith('#')) return;
         if (res == "{") {
             if (stack.length < 2) {
-                throw "{ found but stack size = " + stack.length;
+                logger.error("{ found but stack size = " + stack.length);
             }
 
             var last_elt = stack.pop();
             if (last_elt == "=") {
                 let token = stack.pop();
                 if (token in ['=', '{', '}']) {
-                    throw token + " found after = {";
+                    logger.error(token + " found after = {");
                 }
 
                 lastSectionName = token;
@@ -52,7 +52,7 @@ function fromString(data) {
             } else {
                 stack.push(last_elt);
                 if (lastSectionName == "") {
-                    throw "Unnamed section found and no names available. Last token: " + last_elt;
+                    logger.warn("Error while parsing file: Unnamed section. Last token: " + last_elt);
                 }
                 currentSection = new Section(lastSectionName, currentSection);
             }
@@ -93,7 +93,7 @@ function fromString(data) {
             } else {
                 token = stack.pop();
                 if (token in ['=', '{', '}']) {
-                    throw token + " found after = value when expected a key";
+                    logger.error(token + " found after = value when expected a key");
                 }
 
                 currentSection.add_element(token, res);
