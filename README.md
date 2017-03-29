@@ -1,7 +1,7 @@
 # save2vid
 A **savegame visualizer** for Paradox Interactive's [Europa Universalis IV](http://www.europauniversalis4.com/) that renders the political map mode over time as a configurable video using *ffmpeg*.
 
-![Sample map preview](doc/map.png)
+![Sample map preview](doc/map.gif)
 
 ## Setup
 * Install [ffmpeg](https://ffmpeg.org/download.html).
@@ -13,7 +13,7 @@ A **savegame visualizer** for Paradox Interactive's [Europa Universalis IV](http
 * Change `config/default.js` to match your game path and output preferences. See [configuration](#configuration) for details.
 * `node app.js [path to your uncompressed save file]`
 
-Make sure EU4 is installed in the specified directory and ffmpeg is in your path.
+Make sure EU4 is installed in the specified directory and ffmpeg is in your path. You can use ffmpeg to produce a gif: `ffmpeg -ss 00:00:00.000 -i out/video1.mp4 -pix_fmt rgb24 -r 1 -t 00:00:10.000 output.gif`
 
 ## Compatibility
 * Use a recent version of Node.js. Tested with 6.5.0, but should work in older versions.
